@@ -24,6 +24,22 @@ db.connect((err) => {
     console.log('Conectado a la base de datos.');
 });
 
+// Suponiendo que estás usando Express
+app.get('/api/propietarios/search', async (req, res) => {
+    const { dni } = req.query;
+  
+    try {
+      const query = dni ? `SELECT * FROM propietarios WHERE dni LIKE ?` : `SELECT * FROM propietarios`;
+      const values = dni ? [`%${dni}%`] : [];
+      const [results] = await db.execute(query, values);
+      res.json(results);
+    } catch (error) {
+      console.error('Error al buscar propietarios:', error);
+      res.status(500).send('Error al buscar propietarios');
+    }
+  });
+  
+
 // Obtener todos los propietarios
 app.get('/api/propietarios', (req, res) => {
     const query = `
