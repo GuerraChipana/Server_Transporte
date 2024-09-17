@@ -1,121 +1,27 @@
 const express = require('express');
-const mysql = require('mysql2');
-const cors = require('cors');
+const cors = require('cors'); // Asegúrate de que esto esté importado
 const app = express();
 const port = 3002;
 
+// Importar rutas
+const propietariosRouter = require('./routes/propietarios');
+const segurosRouter = require('./routes/SeguroVehicular');
+const testRouter = require('./routes/test');
+const loginRouter = require('./routes/Login')
+
+// Configurar middleware
 app.use(express.json());
 app.use(cors({
-    origin: '*', 
+    origin: '*',
 }));
 
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'mdtai_transporte_1'
-});
+// Usar rutas
+app.use('/api/propietarios', propietariosRouter);
+app.use('/api/seguros', segurosRouter);
+app.use('/test', testRouter);
+app.use('/api/login', loginRouter);
 
-db.connect((err) => {
-    if (err) {
-        console.error('Error de conexión a la base de datos:', err);
-        throw err;
-    }
-    console.log('Conectado a la base de datos.');
-});
-
-// Suponiendo que estás usando Express
-app.get('/api/propietarios/search', async (req, res) => {
-    const { dni } = req.query;
-  
-    try {
-      const query = dni ? `SELECT * FROM propietarios WHERE dni LIKE ?` : `SELECT * FROM propietarios`;
-      const values = dni ? [`%${dni}%`] : [];
-      const [results] = await db.execute(query, values);
-      res.json(results);
-    } catch (error) {
-      console.error('Error al buscar propietarios:', error);
-      res.status(500).send('Error al buscar propietarios');
-    }
-  });
-  
-
-// Obtener todos los propietarios
-app.get('/api/propietarios', (req, res) => {
-    const query = `
-        SELECT id, nombre, apellido, dni, telefono, domicilio
-        FROM Propietario
-    `;
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Error al obtener propietarios:', err);
-            return res.status(500).json({ error: 'Error al obtener propietarios' });
-        }
-        res.json(results);
-    });
-});
-
-// Agregar un nuevo propietario
-app.post('/api/propietarios', (req, res) => {
-    const { nombre, apellido, dni, telefono, domicilio } = req.body;
-
-    if (!nombre || !apellido || !dni || !telefono || !domicilio) {
-        return res.status(400).json({ error: 'Todos los campos son requeridos' });
-    }
-
-    const query = `
-        INSERT INTO Propietario (nombre, apellido, dni, telefono, domicilio)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-
-    db.query(query, [nombre, apellido, dni, telefono, domicilio], (err, result) => {
-        if (err) {
-            console.error('Error al agregar el propietario:', err);
-            return res.status(500).json({ error: 'Error al agregar el propietario' });
-        }
-        res.status(201).json({ message: 'Propietario agregado exitosamente', propietarioId: result.insertId });
-    });
-});
-
-// Actualizar un propietario
-app.put('/api/propietarios/:id', (req, res) => {
-    const id = req.params.id;
-    const { nombre, apellido, dni, telefono, domicilio } = req.body;
-
-    if (!nombre || !apellido || !dni || !telefono || !domicilio) {
-        return res.status(400).json({ error: 'Todos los campos son requeridos' });
-    }
-
-    const query = `
-        UPDATE Propietario
-        SET nombre = ?, apellido = ?, dni = ?, telefono = ?, domicilio = ?
-        WHERE id = ?
-    `;
-
-    db.query(query, [nombre, apellido, dni, telefono, domicilio, id], (err, result) => {
-        if (err) {
-            console.error('Error al actualizar el propietario:', err);
-            return res.status(500).json({ error: 'Error al actualizar propietario' });
-        }
-        res.json({ message: 'Propietario actualizado exitosamente' });
-    });
-});
-
-// Eliminar un propietario
-app.delete('/api/propietarios/:id', (req, res) => {
-    const id = req.params.id;
-
-    const query = 'DELETE FROM Propietario WHERE id = ?';
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('Error al eliminar el propietario:', err);
-            return res.status(500).json({ error: 'Error al eliminar propietario' });
-        }
-        res.json({ message: 'Propietario eliminado exitosamente' });
-    });
-});
-
-
+// Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
 });
